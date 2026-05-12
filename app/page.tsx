@@ -2,23 +2,11 @@ import { ChatWindow } from "@/components/chat-window"
 
 export default function Home() {
   return (
-    <main
-      className="h-[100dvh] w-full flex items-stretch justify-center relative overflow-hidden"
-      style={{
-        background:
-          "radial-gradient(ellipse at 50% 0%, rgba(34, 211, 238, 0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, rgba(168, 85, 247, 0.06) 0%, transparent 50%), #050507",
-      }}
-    >
-      {/* Subtle grid pattern for depth */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
+    <main className="h-[100dvh] w-full flex items-stretch justify-center bg-gradient-to-br from-slate-950 via-[#0a0a0d] to-black relative overflow-hidden">
+      {/* Premium ambient glow elements */}
+      <div className="absolute top-0 left-1/4 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl opacity-30 pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-green-500/8 rounded-full blur-3xl opacity-20 pointer-events-none" />
+      <div className="absolute top-1/2 right-0 w-72 h-72 bg-cyan-500/5 rounded-full blur-3xl opacity-15 pointer-events-none" />
 
       <ChatWindow />
     </main>

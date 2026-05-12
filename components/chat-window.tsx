@@ -1,7 +1,16 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Send, Mic, Plus, Sparkles, Minus, Maximize2 } from "lucide-react"
+import {
+  Send,
+  Mic,
+  Plus,
+  Sparkles,
+  MessageSquare,
+  Settings,
+  HelpCircle,
+  Lock,
+} from "lucide-react"
 
 interface Message {
   id: string
@@ -14,22 +23,22 @@ export function ChatWindow() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Hello! I'm Aurora, your AI assistant. How can I help you today?",
+      content: "Welcome to ChatCipiky PRO. I&apos;m your premium AI assistant, ready to help.",
       sender: "assistant",
-      timestamp: new Date(),
+      timestamp: new Date(Date.now() - 180000),
     },
     {
       id: "2",
-      content: "Can you show me how the neon glow effect works?",
+      content: "How does the frozen glass aesthetic work?",
       sender: "user",
-      timestamp: new Date(),
+      timestamp: new Date(Date.now() - 120000),
     },
     {
       id: "3",
       content:
-        "Of course! The animated border uses a conic gradient that rotates smoothly, creating a vibrant neon halo around the window.",
+        "The interface uses frosted translucent surfaces with subtle blur effects, elegant reflections, and soft inner glow—creating a premium, calming experience.",
       sender: "assistant",
-      timestamp: new Date(),
+      timestamp: new Date(Date.now() - 60000),
     },
   ])
   const [inputValue, setInputValue] = useState("")
@@ -61,13 +70,14 @@ export function ChatWindow() {
     setTimeout(() => {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "Thanks for your message! I'm here to assist you with anything you need.",
+        content:
+          "That&apos;s a great question. I&apos;m continuously learning to provide better assistance.",
         sender: "assistant",
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, assistantMessage])
       setIsTyping(false)
-    }, 1500)
+    }, 2000)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -78,233 +88,261 @@ export function ChatWindow() {
   }
 
   return (
-    <div className="relative w-full h-[100dvh] max-w-[720px] mx-auto p-3 sm:p-5">
-      {/* Outer bloom — sits behind the card, doesn't affect layout */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -inset-6 rounded-[2.25rem] opacity-70 blur-2xl"
-        style={{
-          background:
-            "conic-gradient(from 0deg at 50% 50%, #22d3ee 0%, #3b82f6 25%, #a855f7 50%, #ec4899 75%, #22d3ee 100%)",
-          animation: "neon-spin 6s linear infinite",
-        }}
-      />
+    <div className="relative w-full h-[100dvh] max-w-[720px] mx-auto p-3 sm:p-5 pt-safe">
+      {/* Premium chat container */}
+      <div className="relative w-full h-full rounded-[2rem] overflow-hidden">
+        {/* Frosted glass background */}
+        <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-b from-white/[0.03] via-white/[0.01] to-transparent backdrop-blur-xl" />
 
-      {/* Card wrapper with animated gradient border */}
-      <div className="relative h-full rounded-[1.75rem] p-[1.5px] overflow-hidden">
-        {/* Spinning conic gradient border */}
+        {/* Subtle top accent glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-96 bg-gradient-to-b from-cyan-500/5 to-transparent blur-3xl rounded-b-full pointer-events-none" />
+
+        {/* Premium border */}
+        <div className="absolute inset-0 rounded-[2rem] border border-white/10 pointer-events-none" />
+
+        {/* Inner frosted shadow */}
         <div
-          aria-hidden
-          className="absolute inset-[-50%]"
+          className="absolute inset-0 rounded-[2rem] pointer-events-none"
           style={{
-            background:
-              "conic-gradient(from 0deg at 50% 50%, #22d3ee 0%, #3b82f6 20%, #a855f7 40%, #ec4899 60%, #22d3ee 100%)",
-            animation: "neon-spin 6s linear infinite",
+            boxShadow:
+              "inset 0 1px 3px rgba(255,255,255,0.08), inset 0 0 1px rgba(255,255,255,0.04), 0 20px 60px -20px rgba(0,0,0,0.6)",
           }}
         />
 
-        {/* Inner card content */}
-        <div
-          className="relative flex flex-col h-full rounded-[1.65rem] overflow-hidden"
-          style={{
-            background:
-              "linear-gradient(180deg, #0b0b12 0%, #0a0a10 50%, #08080d 100%)",
-            boxShadow:
-              "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.04), 0 30px 80px -20px rgba(34,211,238,0.15), 0 20px 60px -20px rgba(168,85,247,0.18)",
-          }}
-        >
-          {/* Title bar */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-black/30 backdrop-blur-sm">
-            <div className="flex items-center gap-2">
-              <button
-                className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110 transition-all"
-                aria-label="Close"
-              />
-              <button
-                className="w-3 h-3 rounded-full bg-[#febc2e] hover:brightness-110 transition-all"
-                aria-label="Minimize"
-              >
-                <Minus className="w-2 h-2 mx-auto opacity-0 hover:opacity-100 text-black/60" />
-              </button>
-              <button
-                className="w-3 h-3 rounded-full bg-[#28c840] hover:brightness-110 transition-all"
-                aria-label="Maximize"
-              >
-                <Maximize2 className="w-1.5 h-1.5 mx-auto opacity-0 hover:opacity-100 text-black/60" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1.5 text-xs font-medium text-white/70">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>NeonChat</span>
-            </div>
-
-            <div className="w-14" />
-          </div>
-
-          {/* Header with avatar */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
-            <div className="flex items-center gap-3">
-              <div className="relative">
+        {/* Main content container */}
+        <div className="relative h-full flex flex-col">
+          {/* Premium header with branding */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-md">
+            {/* Left: Logo and branding */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex-shrink-0 relative">
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
                   style={{
                     background:
-                      "linear-gradient(135deg, #22d3ee 0%, #3b82f6 50%, #a855f7 100%)",
-                    boxShadow: "0 0 16px rgba(34,211,238,0.4)",
+                      "linear-gradient(135deg, #06b6d4 0%, #10b981 100%)",
+                    boxShadow: "0 8px 24px rgba(6, 182, 212, 0.25)",
                   }}
                 >
-                  <Sparkles className="w-4 h-4 text-white" />
+                  <MessageSquare className="w-5 h-5 text-white" />
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-[#0a0a10]" />
               </div>
-              <div>
-                <h2 className="text-white font-semibold text-sm leading-tight">Aurora</h2>
-                <p className="text-white/40 text-[11px] leading-tight">Online · AI Assistant</p>
+              <div className="min-w-0">
+                <h1 className="text-sm font-semibold text-white leading-tight">
+                  ChatCipiky
+                </h1>
+                <p className="text-[11px] text-white/40 leading-tight">PRO</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="w-1 h-1 rounded-full bg-white/30" />
-              <span className="w-1 h-1 rounded-full bg-white/30" />
-              <span className="w-1 h-1 rounded-full bg-white/30" />
-            </div>
-          </div>
-
-          {/* Messages area */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.sender === "user" ? "justify-end" : "justify-start"
-                }`}
+            {/* Right: Quick actions */}
+            <div className="flex items-center gap-2">
+              <button
+                className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] flex items-center justify-center transition-colors duration-200"
+                aria-label="Settings"
               >
-                {message.sender === "user" ? (
-                  <div
-                    className="max-w-[78%] px-4 py-2.5 text-sm leading-relaxed text-white rounded-2xl rounded-br-md"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%)",
-                      boxShadow: "0 6px 24px -6px rgba(34,211,238,0.45)",
-                    }}
-                  >
-                    {message.content}
-                  </div>
-                ) : (
-                  <div
-                    className="max-w-[78%] px-4 py-2.5 text-sm leading-relaxed text-white/90 rounded-2xl rounded-bl-md border border-white/[0.06]"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)",
-                    }}
-                  >
-                    {message.content}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="px-4 py-3 rounded-2xl rounded-bl-md border border-white/[0.06] bg-white/[0.03]">
-                  <div className="flex items-center gap-1">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    />
-                    <span
-                      className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    />
-                    <span
-                      className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
+                <Settings className="w-4 h-4 text-white/60 hover:text-white/80" />
+              </button>
+              <button
+                className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] flex items-center justify-center transition-colors duration-200"
+                aria-label="Help"
+              >
+                <HelpCircle className="w-4 h-4 text-white/60 hover:text-white/80" />
+              </button>
+            </div>
           </div>
 
-          {/* Composer */}
-          <div className="p-3">
+          {/* Hero section when no messages - not shown since we have messages */}
+          {messages.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #06b6d4 0%, #10b981 100%)",
+                  boxShadow: "0 12px 40px rgba(6, 182, 212, 0.2)",
+                }}
+              >
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <h2 className="text-lg font-semibold text-white mb-2 text-center">
+                Welcome to ChatCipiky PRO
+              </h2>
+              <p className="text-sm text-white/50 text-center max-w-xs">
+                Experience premium AI conversations with a refined interface
+              </p>
+            </div>
+          )}
+
+          {/* Messages container */}
+          {messages.length > 0 && (
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/10">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.sender === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {message.sender === "user" ? (
+                    // User message - gradient frosted glass
+                    <div
+                      className="max-w-[75%] px-4 py-3 text-sm leading-relaxed text-white rounded-2xl rounded-br-md border border-white/10"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #06b6d4 0%, rgba(6, 182, 212, 0.4) 100%)",
+                        boxShadow:
+                          "0 8px 32px rgba(6, 182, 212, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.2)",
+                      }}
+                    >
+                      {message.content}
+                    </div>
+                  ) : (
+                    // Assistant message - frosted glass only
+                    <div
+                      className="max-w-[75%] px-4 py-3 text-sm leading-relaxed text-white/90 rounded-2xl rounded-bl-md border border-white/8"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                        boxShadow:
+                          "inset 0 1px 2px rgba(255, 255, 255, 0.08), 0 4px 16px rgba(0, 0, 0, 0.3)",
+                      }}
+                    >
+                      {message.content}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div
+                    className="px-4 py-3 rounded-2xl rounded-bl-md border border-white/8"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2 h-2 rounded-full bg-cyan-400"
+                        style={{
+                          animation: "pulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                          animationDelay: "0ms",
+                        }}
+                      />
+                      <span
+                        className="w-2 h-2 rounded-full bg-cyan-400"
+                        style={{
+                          animation: "pulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                          animationDelay: "200ms",
+                        }}
+                      />
+                      <span
+                        className="w-2 h-2 rounded-full bg-cyan-400"
+                        style={{
+                          animation: "pulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                          animationDelay: "400ms",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+
+          {/* Premium composer */}
+          <div className="flex-shrink-0 px-5 pb-5 pt-3 border-t border-white/[0.06] bg-gradient-to-t from-white/[0.01] to-transparent backdrop-blur-sm">
             <div
-              className="rounded-2xl border border-white/[0.06]"
+              className="rounded-xl border border-white/8 overflow-hidden"
               style={{
                 background:
-                  "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)",
+                  "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)",
                 boxShadow:
-                  "inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 24px -8px rgba(0,0,0,0.5)",
+                  "inset 0 1px 2px rgba(255,255,255,0.05), 0 8px 24px rgba(0, 0, 0, 0.4)",
               }}
             >
-              <div className="flex flex-col p-2.5 gap-2">
+              <div className="flex flex-col p-3 gap-3">
+                {/* Text input */}
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Type your message…"
-                  className="w-full bg-transparent text-white placeholder-white/35 text-sm resize-none outline-none px-2 py-1.5 min-h-[28px] max-h-[120px]"
+                  placeholder="Ask anything..."
+                  className="w-full bg-transparent text-white placeholder-white/35 text-sm resize-none outline-none px-1 py-2 min-h-[32px] max-h-[100px] font-medium"
                   rows={1}
                 />
 
+                {/* Action buttons */}
                 <div className="flex items-center justify-between">
+                  {/* Left actions */}
                   <div className="flex items-center gap-2">
                     <button
-                      className="w-8 h-8 rounded-full bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center transition-colors"
-                      aria-label="Add attachment"
+                      className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] flex items-center justify-center transition-colors duration-200"
+                      aria-label="Add file"
                     >
-                      <Plus className="w-4 h-4 text-white/70" />
+                      <Plus className="w-4 h-4 text-white/60 hover:text-white/80" />
                     </button>
 
-                    <button className="flex items-center gap-1.5 px-1 text-cyan-400 hover:text-cyan-300 text-xs font-medium transition-colors">
-                      <span className="relative w-4 h-4 rounded-full border border-cyan-400/80 flex items-center justify-center">
-                        <span className="w-1 h-1 rounded-full bg-cyan-400" />
+                    {/* Encrypted badge */}
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.02] border border-white/5">
+                      <Lock className="w-3 h-3 text-white/50" />
+                      <span className="text-[10px] text-white/40 font-medium">
+                        Encrypted
                       </span>
-                      <span>Tools</span>
-                    </button>
+                    </div>
                   </div>
 
+                  {/* Right actions */}
                   <div className="flex items-center gap-2">
                     <button
-                      className="w-8 h-8 rounded-full bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center transition-colors"
+                      className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] flex items-center justify-center transition-colors duration-200"
                       aria-label="Voice input"
                     >
-                      <Mic className="w-4 h-4 text-white/70" />
+                      <Mic className="w-4 h-4 text-white/60 hover:text-white/80" />
                     </button>
 
+                    {/* Premium send button */}
                     <button
                       onClick={handleSend}
                       disabled={!inputValue.trim()}
-                      className="w-9 h-9 rounded-full flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
                       style={{
-                        background:
-                          "linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%)",
+                        background: inputValue.trim()
+                          ? "linear-gradient(135deg, #06b6d4 0%, #10b981 100%)"
+                          : "linear-gradient(135deg, #06b6d4 0%, #10b981 100%)",
                         boxShadow: inputValue.trim()
-                          ? "0 4px 18px rgba(34,211,238,0.5)"
-                          : "0 2px 8px rgba(34,211,238,0.15)",
+                          ? "0 6px 20px rgba(6, 182, 212, 0.35)"
+                          : "0 2px 8px rgba(6, 182, 212, 0.15)",
                       }}
                       aria-label="Send message"
                     >
-                      <Send className="w-3.5 h-3.5 text-white -translate-x-px translate-y-px" />
+                      <Send className="w-3.5 h-3.5 text-white" />
                     </button>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Footer note */}
+            <p className="text-[10px] text-white/30 text-center mt-2">
+              ChatCipiky PRO • Premium Encrypted AI
+            </p>
           </div>
         </div>
       </div>
 
       <style jsx>{`
-        @keyframes neon-spin {
-          from {
-            transform: rotate(0deg);
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 0.4;
           }
-          to {
-            transform: rotate(360deg);
+          50% {
+            opacity: 1;
           }
         }
       `}</style>
