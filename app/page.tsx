@@ -3,7 +3,7 @@ import { ChatWindow } from "@/components/chat-window"
 export default function Home() {
   return (
     <main
-      className="min-h-screen w-full flex items-center justify-center p-4 sm:p-8 relative overflow-hidden"
+      className="h-[100dvh] w-full flex items-stretch justify-center relative overflow-hidden"
       style={{
         background:
           "radial-gradient(ellipse at 50% 0%, rgba(34, 211, 238, 0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, rgba(168, 85, 247, 0.06) 0%, transparent 50%), #050507",

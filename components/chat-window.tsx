@@ -78,7 +78,7 @@ export function ChatWindow() {
   }
 
   return (
-    <div className="relative w-full max-w-[560px] mx-auto">
+    <div className="relative w-full h-[100dvh] max-w-[720px] mx-auto p-3 sm:p-5">
       {/* Outer bloom — sits behind the card, doesn't affect layout */}
       <div
         aria-hidden
@@ -91,7 +91,7 @@ export function ChatWindow() {
       />
 
       {/* Card wrapper with animated gradient border */}
-      <div className="relative rounded-[1.75rem] p-[1.5px] overflow-hidden">
+      <div className="relative h-full rounded-[1.75rem] p-[1.5px] overflow-hidden">
         {/* Spinning conic gradient border */}
         <div
           aria-hidden
@@ -105,12 +105,10 @@ export function ChatWindow() {
 
         {/* Inner card content */}
         <div
-          className="relative flex flex-col rounded-[1.65rem] overflow-hidden"
+          className="relative flex flex-col h-full rounded-[1.65rem] overflow-hidden"
           style={{
             background:
               "linear-gradient(180deg, #0b0b12 0%, #0a0a10 50%, #08080d 100%)",
-            height: "min(78vh, 640px)",
-            minHeight: "480px",
             boxShadow:
               "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.04), 0 30px 80px -20px rgba(34,211,238,0.15), 0 20px 60px -20px rgba(168,85,247,0.18)",
           }}
