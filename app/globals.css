@@ -3,9 +3,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ChatCipiky PRO - Premium Frozen Glass Theme */
+/* ChatCipiky PRO — AMOLED Black Theme */
 :root {
-  --background: #0a0a0d;
+  --background: #000000;
   --foreground: #ffffff;
   --card: rgba(255, 255, 255, 0.03);
   --card-foreground: #ffffff;
@@ -41,7 +41,7 @@
 }
 
 .dark {
-  --background: #0a0a0d;
+  --background: #000000;
   --foreground: #ffffff;
   --card: rgba(255, 255, 255, 0.03);
   --card-foreground: #ffffff;

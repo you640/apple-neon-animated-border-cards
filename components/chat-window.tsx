@@ -3,14 +3,13 @@
 import { useState, useRef, useEffect } from "react"
 import type React from "react"
 import {
-  Send,
+  ArrowUp,
   Mic,
   Plus,
   Sparkles,
-  MessageSquare,
-  Settings,
-  HelpCircle,
-  Lock,
+  SlidersHorizontal,
+  MoreHorizontal,
+  PenSquare,
 } from "lucide-react"
 
 interface Message {
@@ -20,60 +19,39 @@ interface Message {
   timestamp: Date
 }
 
+const SUGGESTIONS = [
+  { title: "Napíš mi krátku báseň", subtitle: "o tichu a oceáne" },
+  { title: "Vysvetli kvantovú fyziku", subtitle: "ako mám 12 rokov" },
+  { title: "Naplánuj víkend v Prahe", subtitle: "pre dvoch, ideálne počasie" },
+  { title: "Sumarizuj môj e-mail", subtitle: "v troch bodoch" },
+]
+
 export function ChatWindow() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content:
-        "Welcome to ChatCipiky PRO. I'm your premium AI assistant, ready to help.",
-      sender: "assistant",
-      timestamp: new Date(Date.now() - 180000),
-    },
-    {
-      id: "2",
-      content: "How does the frozen glass aesthetic work?",
-      sender: "user",
-      timestamp: new Date(Date.now() - 120000),
-    },
-    {
-      id: "3",
-      content:
-        "The interface uses frosted translucent surfaces with subtle blur effects, elegant reflections, and a soft inner glow — creating a premium, calming experience.",
-      sender: "assistant",
-      timestamp: new Date(Date.now() - 60000),
-    },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
   useEffect(() => {
-    scrollToBottom()
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, isTyping])
 
-  // Auto-resize textarea
   useEffect(() => {
     const ta = textareaRef.current
     if (!ta) return
     ta.style.height = "auto"
-    ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`
+    ta.style.height = `${Math.min(ta.scrollHeight, 140)}px`
   }, [inputValue])
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return
-
+  const sendMessage = (content: string) => {
+    if (!content.trim()) return
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue,
+      content,
       sender: "user",
       timestamp: new Date(),
     }
-
     setMessages((prev) => [...prev, userMessage])
     setInputValue("")
     setIsTyping(true)
@@ -82,298 +60,358 @@ export function ChatWindow() {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         content:
-          "That's a great question. I'm continuously learning to provide better assistance.",
+          "Som ChatCipiky PRO. Rád ti pomôžem — pokojne sa pýtaj na čokoľvek, od kreatívneho písania až po komplexné analýzy.",
         sender: "assistant",
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, assistantMessage])
       setIsTyping(false)
-    }, 1600)
+    }, 1400)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSend()
+      sendMessage(inputValue)
     }
   }
 
+  const hasInput = inputValue.trim().length > 0
+  const isEmpty = messages.length === 0
+
   return (
-    <div className="relative w-full h-dvh max-w-[820px] mx-auto flex flex-col px-3 pt-3 pb-3 sm:px-5 sm:pt-5 sm:pb-5 pl-safe pr-safe pt-safe pb-safe">
-      {/* Premium chat container */}
-      <div className="relative flex-1 min-h-0 w-full rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden">
-        {/* Frosted glass background */}
-        <div className="absolute inset-0 rounded-[1.5rem] sm:rounded-[2rem] bg-gradient-to-b from-white/[0.04] via-white/[0.015] to-transparent backdrop-blur-xl" />
+    <div className="relative w-full h-dvh max-w-[640px] mx-auto flex flex-col bg-black overflow-hidden">
+      {/* Very subtle ambient accents — restraint */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 w-[120%] h-64 opacity-60"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(6,182,212,0.08) 0%, transparent 70%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 left-1/2 -translate-x-1/2 w-[120%] h-64 opacity-50"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(16,185,129,0.05) 0%, transparent 70%)",
+        }}
+      />
 
-        {/* Subtle top accent glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-72 sm:h-96 bg-gradient-to-b from-cyan-500/[0.08] to-transparent blur-3xl rounded-b-full pointer-events-none" />
-
-        {/* Premium border */}
-        <div className="absolute inset-0 rounded-[1.5rem] sm:rounded-[2rem] border border-white/10 pointer-events-none" />
-
-        {/* Inner frosted shadow */}
-        <div
-          className="absolute inset-0 rounded-[1.5rem] sm:rounded-[2rem] pointer-events-none"
-          style={{
-            boxShadow:
-              "inset 0 1px 3px rgba(255,255,255,0.08), inset 0 0 1px rgba(255,255,255,0.04), 0 20px 60px -20px rgba(0,0,0,0.6)",
-          }}
-        />
-
-        {/* Main content container */}
-        <div className="relative h-full flex flex-col">
-          {/* Premium header with branding */}
-          <header className="flex-shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 h-14 sm:h-16 border-b border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent backdrop-blur-md">
-            {/* Left: Logo and branding */}
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="flex-shrink-0 relative">
-                <div
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #06b6d4 0%, #10b981 100%)",
-                    boxShadow:
-                      "0 8px 24px rgba(6, 182, 212, 0.25), inset 0 1px 0 rgba(255,255,255,0.25)",
-                  }}
-                >
-                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </div>
-                {/* Online indicator */}
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0a0a0d]" />
-              </div>
-              <div className="min-w-0 flex items-baseline gap-1.5 sm:gap-2">
-                <h1 className="text-[15px] sm:text-base font-semibold text-white leading-tight tracking-tight truncate">
-                  ChatCipiky
-                </h1>
-                <span
-                  className="flex-shrink-0 text-[9px] sm:text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded-md border border-cyan-400/30 text-cyan-300"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%)",
-                  }}
-                >
-                  PRO
-                </span>
-              </div>
-            </div>
-
-            {/* Right: Quick actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <button
-                type="button"
-                className="w-10 h-10 sm:w-9 sm:h-9 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] active:bg-white/[0.1] border border-white/5 flex items-center justify-center transition-colors duration-200"
-                aria-label="Settings"
-              >
-                <Settings className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-white/60" />
-              </button>
-              <button
-                type="button"
-                className="w-10 h-10 sm:w-9 sm:h-9 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] active:bg-white/[0.1] border border-white/5 flex items-center justify-center transition-colors duration-200"
-                aria-label="Help"
-              >
-                <HelpCircle className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-white/60" />
-              </button>
-            </div>
-          </header>
-
-          {/* Hero section (when no messages) */}
-          {messages.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
-              <div
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-4 sm:mb-5"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #06b6d4 0%, #10b981 100%)",
-                  boxShadow:
-                    "0 12px 40px rgba(6, 182, 212, 0.25), inset 0 1px 0 rgba(255,255,255,0.25)",
-                }}
-              >
-                <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-              </div>
-              <h2 className="text-lg sm:text-xl font-semibold text-white mb-2 tracking-tight">
-                Welcome to ChatCipiky PRO
-              </h2>
-              <p className="text-[13px] sm:text-sm text-white/50 max-w-xs leading-relaxed text-pretty">
-                Experience premium AI conversations with a refined, calm interface.
-              </p>
-            </div>
-          ) : (
-            /* Messages container */
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4 scrollbar-hide">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.sender === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {message.sender === "user" ? (
-                    // User message - gradient frosted glass
-                    <div
-                      className="max-w-[85%] sm:max-w-[75%] px-3.5 sm:px-4 py-2.5 sm:py-3 text-[14px] sm:text-[15px] leading-relaxed text-white rounded-2xl rounded-br-md border border-white/10"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, rgba(6, 182, 212, 0.9) 0%, rgba(6, 182, 212, 0.55) 100%)",
-                        boxShadow:
-                          "0 8px 32px rgba(6, 182, 212, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.22)",
-                      }}
-                    >
-                      {message.content}
-                    </div>
-                  ) : (
-                    // Assistant message - frosted glass only
-                    <div
-                      className="max-w-[85%] sm:max-w-[75%] px-3.5 sm:px-4 py-2.5 sm:py-3 text-[14px] sm:text-[15px] leading-relaxed text-white/90 rounded-2xl rounded-bl-md border border-white/10"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                        boxShadow:
-                          "inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 4px 16px rgba(0, 0, 0, 0.3)",
-                      }}
-                    >
-                      {message.content}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div
-                    className="px-4 py-3 rounded-2xl rounded-bl-md border border-white/10"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                    }}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full bg-cyan-400"
-                        style={{
-                          animation:
-                            "ccPulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-                          animationDelay: "0ms",
-                        }}
-                      />
-                      <span
-                        className="w-1.5 h-1.5 rounded-full bg-cyan-400"
-                        style={{
-                          animation:
-                            "ccPulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-                          animationDelay: "200ms",
-                        }}
-                      />
-                      <span
-                        className="w-1.5 h-1.5 rounded-full bg-cyan-400"
-                        style={{
-                          animation:
-                            "ccPulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-                          animationDelay: "400ms",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-
-          {/* Premium composer */}
-          <div className="flex-shrink-0 px-3 sm:px-5 pb-3 sm:pb-4 pt-2 sm:pt-3 border-t border-white/[0.06] bg-gradient-to-t from-white/[0.02] to-transparent backdrop-blur-sm">
+      {/* ─────────── HEADER ─────────── */}
+      <header className="relative z-10 flex-shrink-0 pt-safe">
+        <div className="flex items-center justify-between px-4 sm:px-5 h-14 sm:h-16">
+          {/* Left: Logo + brand + PRO */}
+          <div className="flex items-center gap-2.5 min-w-0">
             <div
-              className="rounded-2xl border border-white/10 overflow-hidden"
+              className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center"
               style={{
                 background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)",
+                  "linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #10b981 100%)",
                 boxShadow:
-                  "inset 0 1px 1px rgba(255,255,255,0.06), 0 8px 24px rgba(0, 0, 0, 0.4)",
+                  "0 0 0 1px rgba(6,182,212,0.25), 0 8px 20px -8px rgba(6,182,212,0.5), inset 0 1px 0 rgba(255,255,255,0.25)",
               }}
             >
-              <div className="flex flex-col p-2.5 sm:p-3 gap-2 sm:gap-2.5">
-                {/* Text input */}
-                <textarea
-                  ref={textareaRef}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask anything..."
-                  rows={1}
-                  className="w-full bg-transparent text-white placeholder-white/35 text-[15px] sm:text-[15px] resize-none outline-none px-1.5 py-1.5 min-h-[28px] max-h-[120px] leading-relaxed"
+              <Sparkles
+                className="w-[15px] h-[15px] sm:w-4 sm:h-4 text-white"
+                strokeWidth={2.25}
+              />
+            </div>
+            <div className="flex items-baseline gap-1.5 min-w-0">
+              <h1 className="text-[15px] sm:text-base font-semibold text-white tracking-[-0.01em] truncate">
+                ChatCipiky
+              </h1>
+              <span
+                className="flex-shrink-0 text-[9px] font-bold tracking-[0.08em] px-1.5 py-[3px] rounded-md text-cyan-300"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(6,182,212,0.18) 0%, rgba(16,185,129,0.12) 100%)",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(6,182,212,0.3), inset 0 1px 0 rgba(255,255,255,0.06)",
+                }}
+              >
+                PRO
+              </span>
+            </div>
+          </div>
+
+          {/* Right: actions */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="Nový chat"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors"
+            >
+              <PenSquare className="w-[18px] h-[18px]" strokeWidth={1.75} />
+            </button>
+            <button
+              type="button"
+              aria-label="Viac"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors"
+            >
+              <MoreHorizontal className="w-[20px] h-[20px]" strokeWidth={1.75} />
+            </button>
+          </div>
+        </div>
+        {/* Hairline divider */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      </header>
+
+      {/* ─────────── CHAT AREA / EMPTY STATE ─────────── */}
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-hide">
+        {isEmpty ? (
+          <div className="min-h-full flex flex-col items-center justify-center px-6 py-10">
+            <div className="w-full max-w-[420px] mx-auto flex flex-col items-center text-center">
+              {/* Premium glyph */}
+              <div className="relative mb-7 sm:mb-8">
+                <div
+                  aria-hidden
+                  className="absolute inset-0 -m-6 rounded-full blur-2xl opacity-70"
+                  style={{
+                    background:
+                      "radial-gradient(circle, rgba(6,182,212,0.35) 0%, transparent 70%)",
+                  }}
                 />
+                <div
+                  className="relative w-[68px] h-[68px] sm:w-[76px] sm:h-[76px] rounded-[22px] flex items-center justify-center"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #10b981 100%)",
+                    boxShadow:
+                      "0 0 0 1px rgba(6,182,212,0.3), 0 20px 50px -12px rgba(6,182,212,0.5), inset 0 1px 0 rgba(255,255,255,0.3)",
+                  }}
+                >
+                  <Sparkles
+                    className="w-7 h-7 sm:w-8 sm:h-8 text-white"
+                    strokeWidth={2}
+                  />
+                </div>
+              </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center justify-between gap-2">
-                  {/* Left actions */}
-                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                    <button
-                      type="button"
-                      className="flex-shrink-0 w-9 h-9 sm:w-9 sm:h-9 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] border border-white/5 flex items-center justify-center transition-colors duration-200"
-                      aria-label="Add attachment"
-                    >
-                      <Plus className="w-[18px] h-[18px] text-white/65" />
-                    </button>
+              {/* Headline */}
+              <h2 className="text-[26px] sm:text-[32px] font-semibold text-white leading-[1.1] tracking-[-0.02em] text-balance">
+                Rád ťa vidím.
+              </h2>
+              <p className="mt-3 sm:mt-3.5 text-[14px] sm:text-[15px] leading-relaxed text-white/50 max-w-[300px] text-pretty">
+                Váš priestor pre kreativitu a inteligenciu.
+              </p>
 
-                    {/* Encrypted badge */}
-                    <div className="hidden xs:flex items-center gap-1.5 px-2 h-9 rounded-xl bg-white/[0.025] border border-white/5">
-                      <Lock className="w-3 h-3 text-emerald-400/70" />
-                      <span className="text-[10px] sm:text-[11px] text-white/50 font-medium tracking-wide">
-                        Encrypted
-                      </span>
+              {/* Suggestion chips */}
+              <div className="mt-8 sm:mt-10 w-full grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s.title}
+                    type="button"
+                    onClick={() => sendMessage(`${s.title} — ${s.subtitle}`)}
+                    className="group text-left p-3 sm:p-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] active:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="text-[13px] sm:text-[13.5px] font-medium text-white/90 leading-snug">
+                      {s.title}
                     </div>
-                  </div>
+                    <div className="mt-0.5 text-[12px] text-white/40 leading-snug">
+                      {s.subtitle}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="px-4 sm:px-5 py-6 sm:py-8">
+            <div className="flex flex-col gap-5 sm:gap-6 max-w-[560px] mx-auto">
+              {messages.map((m) => (
+                <MessageRow key={m.id} message={m} />
+              ))}
+              {isTyping && <TypingIndicator />}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+        )}
+      </div>
 
-                  {/* Right actions */}
-                  <div className="flex items-center gap-1.5 sm:gap-2">
+      {/* ─────────── COMPOSER ─────────── */}
+      <div className="relative z-10 flex-shrink-0 pb-safe">
+        <div className="px-3 sm:px-4 pt-2 pb-3 sm:pb-4">
+          <div
+            className="relative rounded-[26px] sm:rounded-[28px]"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              boxShadow:
+                "inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 40px -20px rgba(0,0,0,0.6)",
+            }}
+          >
+            {/* Soft accent glow underneath when typing */}
+            {hasInput && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-[26px] sm:rounded-[28px] opacity-100 transition-opacity duration-500"
+                style={{
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(6,182,212,0.25), 0 0 40px -8px rgba(6,182,212,0.25)",
+                }}
+              />
+            )}
+
+            <div className="relative flex flex-col px-1.5 pt-1.5 pb-1.5">
+              {/* Textarea */}
+              <textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Opýtaj sa čokoľvek…"
+                rows={1}
+                className="w-full bg-transparent text-white placeholder:text-white/35 text-[15px] sm:text-[15.5px] leading-[1.5] resize-none outline-none px-3.5 sm:px-4 pt-3 pb-1.5 min-h-[44px] max-h-[140px]"
+              />
+
+              {/* Bottom row */}
+              <div className="flex items-center justify-between px-1.5 pb-1">
+                {/* Left actions */}
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    aria-label="Pridať prílohu"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white/65 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors"
+                  >
+                    <Plus className="w-[20px] h-[20px]" strokeWidth={1.75} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Nástroje"
+                    className="h-10 px-3 rounded-full flex items-center gap-1.5 text-white/65 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors"
+                  >
+                    <SlidersHorizontal
+                      className="w-[16px] h-[16px]"
+                      strokeWidth={1.75}
+                    />
+                    <span className="text-[13px] font-medium">Nástroje</span>
+                  </button>
+                </div>
+
+                {/* Right action: Mic or Send */}
+                <div className="flex items-center">
+                  {!hasInput ? (
                     <button
                       type="button"
-                      className="w-9 h-9 sm:w-9 sm:h-9 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] border border-white/5 flex items-center justify-center transition-colors duration-200"
-                      aria-label="Voice input"
+                      aria-label="Hlasový vstup"
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors"
                     >
-                      <Mic className="w-[18px] h-[18px] text-white/65" />
+                      <Mic className="w-[18px] h-[18px]" strokeWidth={1.75} />
                     </button>
-
-                    {/* Premium send button */}
+                  ) : (
                     <button
                       type="button"
-                      onClick={handleSend}
-                      disabled={!inputValue.trim()}
-                      className="w-10 h-10 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                      onClick={() => sendMessage(inputValue)}
+                      aria-label="Odoslať"
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-200 active:scale-95"
                       style={{
                         background:
-                          "linear-gradient(135deg, #06b6d4 0%, #10b981 100%)",
-                        boxShadow: inputValue.trim()
-                          ? "0 8px 24px rgba(6, 182, 212, 0.4), inset 0 1px 0 rgba(255,255,255,0.25)"
-                          : "0 2px 8px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255,255,255,0.2)",
+                          "linear-gradient(135deg, #06b6d4 0%, #0891b2 60%, #10b981 100%)",
+                        boxShadow:
+                          "0 0 0 1px rgba(6,182,212,0.35), 0 8px 20px -6px rgba(6,182,212,0.6), inset 0 1px 0 rgba(255,255,255,0.3)",
                       }}
-                      aria-label="Send message"
                     >
-                      <Send className="w-[16px] h-[16px] text-white -translate-x-px" />
+                      <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2.5} />
                     </button>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
-
-            {/* Footer note */}
-            <p className="text-[10px] sm:text-[11px] text-white/30 text-center mt-2 sm:mt-2.5 tracking-wide">
-              ChatCipiky PRO · Premium Encrypted AI
-            </p>
           </div>
+
+          {/* Disclaimer */}
+          <p className="text-center text-[11px] text-white/30 mt-2.5 tracking-tight">
+            ChatCipiky PRO môže robiť chyby. Skontrolujte dôležité informácie.
+          </p>
         </div>
       </div>
+    </div>
+  )
+}
 
+/* ─────────── Subcomponents ─────────── */
+
+function MessageRow({ message }: { message: Message }) {
+  if (message.sender === "user") {
+    return (
+      <div className="flex justify-end">
+        <div
+          className="max-w-[85%] sm:max-w-[78%] px-4 py-2.5 rounded-[20px] rounded-br-[8px] text-[15px] leading-[1.5] text-white"
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            boxShadow:
+              "inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05)",
+          }}
+        >
+          {message.content}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-start gap-3">
+      <div
+        className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center"
+        style={{
+          background:
+            "linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #10b981 100%)",
+          boxShadow:
+            "0 0 0 1px rgba(6,182,212,0.3), 0 6px 16px -6px rgba(6,182,212,0.4), inset 0 1px 0 rgba(255,255,255,0.25)",
+        }}
+      >
+        <Sparkles className="w-[12px] h-[12px] text-white" strokeWidth={2.25} />
+      </div>
+      <div className="flex-1 min-w-0 pt-0.5">
+        <div className="text-[11px] font-medium text-white/40 mb-1 tracking-wide">
+          ChatCipiky
+        </div>
+        <div className="text-[15px] leading-[1.55] text-white/90 text-pretty">
+          {message.content}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-start gap-3">
+      <div
+        className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center"
+        style={{
+          background:
+            "linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #10b981 100%)",
+          boxShadow:
+            "0 0 0 1px rgba(6,182,212,0.3), 0 6px 16px -6px rgba(6,182,212,0.4), inset 0 1px 0 rgba(255,255,255,0.25)",
+        }}
+      >
+        <Sparkles className="w-[12px] h-[12px] text-white" strokeWidth={2.25} />
+      </div>
+      <div className="flex items-center gap-1.5 pt-2.5">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-[6px] h-[6px] rounded-full bg-white/50"
+            style={{
+              animation: "ccDot 1.3s ease-in-out infinite",
+              animationDelay: `${i * 160}ms`,
+            }}
+          />
+        ))}
+      </div>
       <style jsx>{`
-        @keyframes ccPulse {
+        @keyframes ccDot {
           0%,
+          80%,
           100% {
-            opacity: 0.35;
+            opacity: 0.25;
             transform: translateY(0);
           }
-          50% {
+          40% {
             opacity: 1;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
           }
         }
       `}</style>
