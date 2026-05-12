@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
@@ -7,9 +7,18 @@ import "./globals.css"
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
+export const viewport: Viewport = {
+  themeColor: "#0a0a0d",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+}
+
 export const metadata: Metadata = {
-  title: "v0 Vibecheck 2025",
-  description: "Your year in review with v0",
+  title: "ChatCipiky PRO — Premium AI Chat",
+  description: "A premium frozen-glass AI chat interface with refined typography and luxurious detail.",
   generator: "v0.app",
   icons: {
     icon: [
@@ -36,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark bg-background">
       <body className={`font-sans antialiased`}>
         {children}
         <Analytics />
