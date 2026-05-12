@@ -1,7 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import type React from "react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport, type UIMessage } from "ai"
 import {
   ArrowUp,
   Mic,
@@ -10,14 +12,18 @@ import {
   SlidersHorizontal,
   MoreHorizontal,
   PenSquare,
+  AlertCircle,
+  KeyRound,
 } from "lucide-react"
-
-interface Message {
-  id: string
-  content: string
-  sender: "user" | "assistant"
-  timestamp: Date
-}
+import { ToolsSheet } from "@/components/tools-sheet"
+import {
+  loadSettings,
+  saveSettings,
+  clearSettings,
+  DEFAULT_SETTINGS,
+  MISTRAL_MODELS,
+  type MistralSettings,
+} from "@/lib/mistral-settings"
 
 const SUGGESTIONS = [
   { title: "Napíš mi krátku báseň", subtitle: "o tichu a oceáne" },
@@ -26,16 +32,56 @@ const SUGGESTIONS = [
   { title: "Sumarizuj môj e-mail", subtitle: "v troch bodoch" },
 ]
 
+function getMessageText(msg: UIMessage): string {
+  if (!msg.parts || !Array.isArray(msg.parts)) return ""
+  return msg.parts
+    .filter((p): p is { type: "text"; text: string } => p.type === "text")
+    .map((p) => p.text)
+    .join("")
+}
+
 export function ChatWindow() {
-  const [messages, setMessages] = useState<Message[]>([])
+  const [settings, setSettings] = useState<MistralSettings>(DEFAULT_SETTINGS)
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(false)
   const [inputValue, setInputValue] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // Load settings on mount
+  useEffect(() => {
+    const loaded = loadSettings()
+    setSettings(loaded)
+    setSettingsLoaded(true)
+    if (!loaded.apiKey) {
+      // Prompt for API key on first visit
+      setToolsOpen(true)
+    }
+  }, [])
+
+  const { messages, sendMessage, status, error, stop, setMessages } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      prepareSendMessagesRequest: ({ messages: msgs, id }) => ({
+        body: {
+          id,
+          messages: msgs,
+          model: settings.model,
+          systemPrompt: settings.systemPrompt,
+          temperature: settings.temperature,
+        },
+        headers: {
+          "x-mistral-api-key": settings.apiKey,
+        },
+      }),
+    }),
+  })
+
+  const isStreaming = status === "streaming" || status === "submitted"
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, isTyping])
+  }, [messages, isStreaming])
 
   useEffect(() => {
     const ta = textareaRef.current
@@ -44,40 +90,47 @@ export function ChatWindow() {
     ta.style.height = `${Math.min(ta.scrollHeight, 140)}px`
   }, [inputValue])
 
-  const sendMessage = (content: string) => {
-    if (!content.trim()) return
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      sender: "user",
-      timestamp: new Date(),
-    }
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue("")
-    setIsTyping(true)
-
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content:
-          "Som ChatCipiky PRO. Rád ti pomôžem — pokojne sa pýtaj na čokoľvek, od kreatívneho písania až po komplexné analýzy.",
-        sender: "assistant",
-        timestamp: new Date(),
+  const handleSend = useCallback(
+    (content: string) => {
+      const trimmed = content.trim()
+      if (!trimmed) return
+      if (!settings.apiKey) {
+        setToolsOpen(true)
+        return
       }
-      setMessages((prev) => [...prev, assistantMessage])
-      setIsTyping(false)
-    }, 1400)
-  }
+      sendMessage({ text: trimmed })
+      setInputValue("")
+    },
+    [sendMessage, settings.apiKey],
+  )
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      sendMessage(inputValue)
+      handleSend(inputValue)
     }
+  }
+
+  const handleSaveSettings = (next: MistralSettings) => {
+    saveSettings(next)
+    setSettings(next)
+  }
+
+  const handleClearSettings = () => {
+    clearSettings()
+    setSettings(DEFAULT_SETTINGS)
+  }
+
+  const handleNewChat = () => {
+    setMessages([])
+    setInputValue("")
   }
 
   const hasInput = inputValue.trim().length > 0
   const isEmpty = messages.length === 0
+  const hasKey = settings.apiKey.length > 0
+  const currentModel =
+    MISTRAL_MODELS.find((m) => m.id === settings.model)?.name ?? "Mistral"
 
   return (
     <div className="relative w-full h-dvh max-w-[640px] mx-auto flex flex-col bg-black overflow-hidden">
@@ -103,7 +156,12 @@ export function ChatWindow() {
       <header className="relative z-10 flex-shrink-0 pt-safe">
         <div className="flex items-center justify-between px-4 sm:px-5 h-14 sm:h-16">
           {/* Left: Logo + brand + PRO */}
-          <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => setToolsOpen(true)}
+            className="flex items-center gap-2.5 min-w-0 rounded-xl p-1 -ml-1 hover:bg-white/[0.04] active:bg-white/[0.06] transition-colors"
+            aria-label="Otvoriť nastavenia"
+          >
             <div
               className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center"
               style={{
@@ -118,28 +176,34 @@ export function ChatWindow() {
                 strokeWidth={2.25}
               />
             </div>
-            <div className="flex items-baseline gap-1.5 min-w-0">
-              <h1 className="text-[15px] sm:text-base font-semibold text-white tracking-[-0.01em] truncate">
-                ChatCipiky
-              </h1>
-              <span
-                className="flex-shrink-0 text-[9px] font-bold tracking-[0.08em] px-1.5 py-[3px] rounded-md text-cyan-300"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(6,182,212,0.18) 0%, rgba(16,185,129,0.12) 100%)",
-                  boxShadow:
-                    "inset 0 0 0 1px rgba(6,182,212,0.3), inset 0 1px 0 rgba(255,255,255,0.06)",
-                }}
-              >
-                PRO
+            <div className="flex flex-col items-start min-w-0">
+              <div className="flex items-baseline gap-1.5">
+                <h1 className="text-[15px] sm:text-base font-semibold text-white tracking-[-0.01em] truncate">
+                  ChatCipiky
+                </h1>
+                <span
+                  className="flex-shrink-0 text-[9px] font-bold tracking-[0.08em] px-1.5 py-[3px] rounded-md text-cyan-300"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(6,182,212,0.18) 0%, rgba(16,185,129,0.12) 100%)",
+                    boxShadow:
+                      "inset 0 0 0 1px rgba(6,182,212,0.3), inset 0 1px 0 rgba(255,255,255,0.06)",
+                  }}
+                >
+                  PRO
+                </span>
+              </div>
+              <span className="text-[10.5px] text-white/40 leading-none mt-0.5 truncate">
+                {hasKey ? currentModel : "Pripojte Mistral AI"}
               </span>
             </div>
-          </div>
+          </button>
 
           {/* Right: actions */}
           <div className="flex items-center gap-1">
             <button
               type="button"
+              onClick={handleNewChat}
               aria-label="Nový chat"
               className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors"
             >
@@ -147,7 +211,8 @@ export function ChatWindow() {
             </button>
             <button
               type="button"
-              aria-label="Viac"
+              onClick={() => setToolsOpen(true)}
+              aria-label="Nástroje a nastavenia"
               className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors"
             >
               <MoreHorizontal className="w-[20px] h-[20px]" strokeWidth={1.75} />
@@ -191,39 +256,79 @@ export function ChatWindow() {
 
               {/* Headline */}
               <h2 className="text-[26px] sm:text-[32px] font-semibold text-white leading-[1.1] tracking-[-0.02em] text-balance">
-                Rád ťa vidím.
+                {hasKey ? "Rád ťa vidím." : "Pripojme Mistral AI."}
               </h2>
-              <p className="mt-3 sm:mt-3.5 text-[14px] sm:text-[15px] leading-relaxed text-white/50 max-w-[300px] text-pretty">
-                Váš priestor pre kreativitu a inteligenciu.
+              <p className="mt-3 sm:mt-3.5 text-[14px] sm:text-[15px] leading-relaxed text-white/50 max-w-[320px] text-pretty">
+                {hasKey
+                  ? "Váš priestor pre kreativitu a inteligenciu."
+                  : "Zadajte svoj Mistral API kľúč v Nástrojoch a začnime."}
               </p>
 
-              {/* Suggestion chips */}
-              <div className="mt-8 sm:mt-10 w-full grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s.title}
-                    type="button"
-                    onClick={() => sendMessage(`${s.title} — ${s.subtitle}`)}
-                    className="group text-left p-3 sm:p-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] active:bg-white/[0.06] transition-colors"
-                  >
-                    <div className="text-[13px] sm:text-[13.5px] font-medium text-white/90 leading-snug">
-                      {s.title}
-                    </div>
-                    <div className="mt-0.5 text-[12px] text-white/40 leading-snug">
-                      {s.subtitle}
-                    </div>
-                  </button>
-                ))}
-              </div>
+              {/* CTA when no key */}
+              {!hasKey && settingsLoaded && (
+                <button
+                  type="button"
+                  onClick={() => setToolsOpen(true)}
+                  className="mt-7 inline-flex items-center gap-2 h-11 px-5 rounded-full text-[14px] font-semibold text-white transition-transform active:scale-[0.98]"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #06b6d4 0%, #0891b2 60%, #10b981 100%)",
+                    boxShadow:
+                      "0 0 0 1px rgba(6,182,212,0.35), 0 12px 30px -8px rgba(6,182,212,0.5), inset 0 1px 0 rgba(255,255,255,0.3)",
+                  }}
+                >
+                  <KeyRound className="w-4 h-4" strokeWidth={2} />
+                  Zadať API kľúč
+                </button>
+              )}
+
+              {/* Suggestion chips (only when key is set) */}
+              {hasKey && (
+                <div className="mt-8 sm:mt-10 w-full grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+                  {SUGGESTIONS.map((s) => (
+                    <button
+                      key={s.title}
+                      type="button"
+                      onClick={() => handleSend(`${s.title} — ${s.subtitle}`)}
+                      className="group text-left p-3 sm:p-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] active:bg-white/[0.06] transition-colors"
+                    >
+                      <div className="text-[13px] sm:text-[13.5px] font-medium text-white/90 leading-snug">
+                        {s.title}
+                      </div>
+                      <div className="mt-0.5 text-[12px] text-white/40 leading-snug">
+                        {s.subtitle}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <div className="px-4 sm:px-5 py-6 sm:py-8">
             <div className="flex flex-col gap-5 sm:gap-6 max-w-[560px] mx-auto">
               {messages.map((m) => (
-                <MessageRow key={m.id} message={m} />
+                <MessageRow
+                  key={m.id}
+                  role={m.role}
+                  text={getMessageText(m)}
+                  streaming={
+                    isStreaming &&
+                    m === messages[messages.length - 1] &&
+                    m.role === "assistant"
+                  }
+                />
               ))}
-              {isTyping && <TypingIndicator />}
+              {isStreaming &&
+                messages[messages.length - 1]?.role !== "assistant" && (
+                  <TypingIndicator />
+                )}
+              {error && (
+                <ErrorBanner
+                  message={error.message || "Nastala chyba."}
+                  onOpenSettings={() => setToolsOpen(true)}
+                />
+              )}
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -242,7 +347,7 @@ export function ChatWindow() {
             }}
           >
             {/* Soft accent glow underneath when typing */}
-            {hasInput && (
+            {(hasInput || isStreaming) && (
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 rounded-[26px] sm:rounded-[28px] opacity-100 transition-opacity duration-500"
@@ -260,9 +365,14 @@ export function ChatWindow() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Opýtaj sa čokoľvek…"
+                placeholder={
+                  hasKey
+                    ? "Opýtaj sa čokoľvek…"
+                    : "Najprv zadajte API kľúč v Nástrojoch…"
+                }
                 rows={1}
-                className="w-full bg-transparent text-white placeholder:text-white/35 text-[15px] sm:text-[15.5px] leading-[1.5] resize-none outline-none px-3.5 sm:px-4 pt-3 pb-1.5 min-h-[44px] max-h-[140px]"
+                disabled={!settingsLoaded}
+                className="w-full bg-transparent text-white placeholder:text-white/35 text-[15px] sm:text-[15.5px] leading-[1.5] resize-none outline-none px-3.5 sm:px-4 pt-3 pb-1.5 min-h-[44px] max-h-[140px] disabled:opacity-50"
               />
 
               {/* Bottom row */}
@@ -278,8 +388,13 @@ export function ChatWindow() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setToolsOpen(true)}
                     aria-label="Nástroje"
-                    className="h-10 px-3 rounded-full flex items-center gap-1.5 text-white/65 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors"
+                    className={`h-10 px-3 rounded-full flex items-center gap-1.5 transition-colors ${
+                      hasKey
+                        ? "text-white/65 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1]"
+                        : "text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/15"
+                    }`}
                   >
                     <SlidersHorizontal
                       className="w-[16px] h-[16px]"
@@ -289,9 +404,21 @@ export function ChatWindow() {
                   </button>
                 </div>
 
-                {/* Right action: Mic or Send */}
+                {/* Right action: Mic / Send / Stop */}
                 <div className="flex items-center">
-                  {!hasInput ? (
+                  {isStreaming ? (
+                    <button
+                      type="button"
+                      onClick={() => stop()}
+                      aria-label="Zastaviť"
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-white/10 hover:bg-white/15 active:scale-95 transition-all duration-200"
+                      style={{
+                        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.15)",
+                      }}
+                    >
+                      <span className="w-3 h-3 rounded-[3px] bg-white" />
+                    </button>
+                  ) : !hasInput ? (
                     <button
                       type="button"
                       aria-label="Hlasový vstup"
@@ -302,7 +429,7 @@ export function ChatWindow() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => sendMessage(inputValue)}
+                      onClick={() => handleSend(inputValue)}
                       aria-label="Odoslať"
                       className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-200 active:scale-95"
                       style={{
@@ -322,33 +449,54 @@ export function ChatWindow() {
 
           {/* Disclaimer */}
           <p className="text-center text-[11px] text-white/30 mt-2.5 tracking-tight">
-            ChatCipiky PRO môže robiť chyby. Skontrolujte dôležité informácie.
+            Poháňané{" "}
+            <span className="text-white/45 font-medium">Mistral AI</span> ·
+            ChatCipiky PRO môže robiť chyby.
           </p>
         </div>
       </div>
+
+      {/* Tools / Settings Sheet */}
+      <ToolsSheet
+        open={toolsOpen}
+        onClose={() => setToolsOpen(false)}
+        settings={settings}
+        onSave={handleSaveSettings}
+        onClear={handleClearSettings}
+      />
     </div>
   )
 }
 
 /* ─────────── Subcomponents ─────────── */
 
-function MessageRow({ message }: { message: Message }) {
-  if (message.sender === "user") {
+function MessageRow({
+  role,
+  text,
+  streaming,
+}: {
+  role: "user" | "assistant" | "system"
+  text: string
+  streaming: boolean
+}) {
+  if (role === "user") {
     return (
       <div className="flex justify-end">
         <div
-          className="max-w-[85%] sm:max-w-[78%] px-4 py-2.5 rounded-[20px] rounded-br-[8px] text-[15px] leading-[1.5] text-white"
+          className="max-w-[85%] sm:max-w-[78%] px-4 py-2.5 rounded-[20px] rounded-br-[8px] text-[15px] leading-[1.5] text-white whitespace-pre-wrap break-words"
           style={{
             background: "rgba(255,255,255,0.06)",
             boxShadow:
               "inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05)",
           }}
         >
-          {message.content}
+          {text}
         </div>
       </div>
     )
   }
+
+  if (role === "system") return null
 
   return (
     <div className="flex items-start gap-3">
@@ -367,10 +515,28 @@ function MessageRow({ message }: { message: Message }) {
         <div className="text-[11px] font-medium text-white/40 mb-1 tracking-wide">
           ChatCipiky
         </div>
-        <div className="text-[15px] leading-[1.55] text-white/90 text-pretty">
-          {message.content}
+        <div className="text-[15px] leading-[1.6] text-white/90 text-pretty whitespace-pre-wrap break-words">
+          {text}
+          {streaming && (
+            <span
+              className="inline-block w-[7px] h-[15px] ml-0.5 -mb-0.5 bg-cyan-400 rounded-[1px]"
+              style={{ animation: "ccCursor 1s steps(2) infinite" }}
+            />
+          )}
         </div>
       </div>
+      <style jsx>{`
+        @keyframes ccCursor {
+          0%,
+          50% {
+            opacity: 1;
+          }
+          51%,
+          100% {
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   )
 }
@@ -415,6 +581,46 @@ function TypingIndicator() {
           }
         }
       `}</style>
+    </div>
+  )
+}
+
+function ErrorBanner({
+  message,
+  onOpenSettings,
+}: {
+  message: string
+  onOpenSettings: () => void
+}) {
+  const isAuth =
+    message.toLowerCase().includes("api") ||
+    message.toLowerCase().includes("kľúč") ||
+    message.toLowerCase().includes("unauthorized") ||
+    message.toLowerCase().includes("401")
+  return (
+    <div
+      className="flex items-start gap-3 p-3.5 rounded-2xl"
+      style={{
+        background: "rgba(248,113,113,0.06)",
+        boxShadow: "inset 0 0 0 1px rgba(248,113,113,0.18)",
+      }}
+    >
+      <AlertCircle
+        className="w-4 h-4 mt-0.5 text-red-400 flex-shrink-0"
+        strokeWidth={2}
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] text-red-200/90 leading-relaxed">{message}</p>
+        {isAuth && (
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="mt-2 text-[12px] font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
+          >
+            Otvoriť Nástroje →
+          </button>
+        )}
+      </div>
     </div>
   )
 }
