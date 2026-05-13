@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   X,
   Eye,
@@ -12,18 +12,21 @@ import {
   Sliders,
   Trash2,
   ShieldCheck,
+  Sparkles,
+  AlertCircle,
 } from "lucide-react"
 import {
-  MISTRAL_MODELS,
-  type MistralSettings,
-  type MistralModelId,
-} from "@/lib/mistral-settings"
+  type AISettings,
+  detectProvider,
+  PROVIDERS,
+  resolveModelForKey,
+} from "@/lib/ai-settings"
 
 interface ToolsSheetProps {
   open: boolean
   onClose: () => void
-  settings: MistralSettings
-  onSave: (settings: MistralSettings) => void
+  settings: AISettings
+  onSave: (settings: AISettings) => void
   onClear: () => void
 }
 
@@ -34,7 +37,7 @@ export function ToolsSheet({
   onSave,
   onClear,
 }: ToolsSheetProps) {
-  const [draft, setDraft] = useState<MistralSettings>(settings)
+  const [draft, setDraft] = useState<AISettings>(settings)
   const [showKey, setShowKey] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -64,6 +67,25 @@ export function ToolsSheet({
     return () => window.removeEventListener("keydown", onKey)
   }, [open, onClose])
 
+  const detectedProvider = useMemo(
+    () => detectProvider(draft.apiKey),
+    [draft.apiKey],
+  )
+  const providerInfo =
+    detectedProvider === "unknown" ? null : PROVIDERS[detectedProvider]
+
+  const availableModels = providerInfo?.models ?? []
+
+  /** When the user types a key, snap the model to a valid one for that provider */
+  const handleKeyChange = (value: string) => {
+    const nextProvider = detectProvider(value)
+    const nextModel =
+      nextProvider === "unknown"
+        ? draft.model
+        : resolveModelForKey(value, draft.model)
+    setDraft((d) => ({ ...d, apiKey: value, model: nextModel }))
+  }
+
   const handleSave = () => {
     onSave(draft)
     setSaved(true)
@@ -77,13 +99,13 @@ export function ToolsSheet({
     onClear()
     setDraft({
       apiKey: "",
-      model: "mistral-large-latest",
+      model: "",
       systemPrompt: "",
       temperature: 0.7,
     })
   }
 
-  const keyValid = draft.apiKey.trim().length >= 20
+  const keyValid = draft.apiKey.trim().length >= 20 && detectedProvider !== "unknown"
 
   return (
     <div
@@ -138,7 +160,7 @@ export function ToolsSheet({
                   Nástroje
                 </h2>
                 <p className="text-[11px] text-white/40 tracking-tight">
-                  Pripojte Mistral AI agenta
+                  Pripojte AI providera
                 </p>
               </div>
             </div>
@@ -156,14 +178,44 @@ export function ToolsSheet({
           <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 space-y-6 scrollbar-hide">
             {/* API KEY SECTION */}
             <section>
-              <div className="flex items-center gap-2 mb-2.5">
-                <KeyRound
-                  className="w-3.5 h-3.5 text-cyan-400/80"
-                  strokeWidth={2}
-                />
-                <h3 className="text-[11px] font-semibold text-white/80 tracking-[0.1em] uppercase">
-                  Mistral API kľúč
-                </h3>
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <KeyRound
+                    className="w-3.5 h-3.5 text-cyan-400/80"
+                    strokeWidth={2}
+                  />
+                  <h3 className="text-[11px] font-semibold text-white/80 tracking-[0.1em] uppercase">
+                    Univerzálny API kľúč
+                  </h3>
+                </div>
+
+                {/* Detected provider badge */}
+                {providerInfo ? (
+                  <span
+                    data-testid="detected-provider"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-[0.06em] px-2 py-1 rounded-md text-emerald-300"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(6,182,212,0.1) 100%)",
+                      boxShadow: "inset 0 0 0 1px rgba(16,185,129,0.3)",
+                    }}
+                  >
+                    <Sparkles className="w-3 h-3" strokeWidth={2.25} />
+                    {providerInfo.shortName}
+                  </span>
+                ) : draft.apiKey.trim().length > 0 ? (
+                  <span
+                    data-testid="unknown-provider"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-[0.06em] px-2 py-1 rounded-md text-amber-300"
+                    style={{
+                      background: "rgba(245,158,11,0.12)",
+                      boxShadow: "inset 0 0 0 1px rgba(245,158,11,0.3)",
+                    }}
+                  >
+                    <AlertCircle className="w-3 h-3" strokeWidth={2.25} />
+                    Neznámy formát
+                  </span>
+                ) : null}
               </div>
 
               <div
@@ -177,10 +229,8 @@ export function ToolsSheet({
                 <input
                   type={showKey ? "text" : "password"}
                   value={draft.apiKey}
-                  onChange={(e) =>
-                    setDraft({ ...draft, apiKey: e.target.value })
-                  }
-                  placeholder="Vložte sem svoj Mistral API kľúč"
+                  onChange={(e) => handleKeyChange(e.target.value)}
+                  placeholder="sk-… / sk-ant-… / gsk_… / AIza… / …"
                   autoComplete="off"
                   spellCheck={false}
                   className="w-full bg-transparent outline-none text-white placeholder:text-white/30 text-[14px] px-4 pr-12 py-3.5 font-mono tracking-tight"
@@ -205,94 +255,86 @@ export function ToolsSheet({
                   strokeWidth={2}
                 />
                 <span>
-                  Kľúč sa ukladá lokálne vo vašom zariadení a posiela sa iba
-                  pri každej požiadavke priamo do Mistral AI.
+                  Vložte ľubovoľný kľúč z{" "}
+                  <span className="text-white/65">OpenAI, Anthropic, Mistral, Groq, Google</span>{" "}
+                  alebo <span className="text-white/65">xAI</span>. Providera
+                  zistíme automaticky. Kľúč sa ukladá iba lokálne vo vašom
+                  zariadení.
                 </span>
               </div>
 
-              <a
-                href="https://console.mistral.ai/api-keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2.5 inline-flex items-center gap-1.5 text-[12px] text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                Získať API kľúč na console.mistral.ai
-                <ExternalLink className="w-3 h-3" strokeWidth={2} />
-              </a>
+              {providerInfo && (
+                <a
+                  href={providerInfo.consoleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2.5 inline-flex items-center gap-1.5 text-[12px] text-cyan-400 hover:text-cyan-300 transition-colors"
+                >
+                  Konzola {providerInfo.name}
+                  <ExternalLink className="w-3 h-3" strokeWidth={2} />
+                </a>
+              )}
             </section>
 
-            {/* MODEL PICKER */}
-            <section>
-              <div className="flex items-center gap-2 mb-2.5">
-                <Cpu
-                  className="w-3.5 h-3.5 text-cyan-400/80"
-                  strokeWidth={2}
-                />
-                <h3 className="text-[11px] font-semibold text-white/80 tracking-[0.1em] uppercase">
-                  Model
-                </h3>
-              </div>
+            {/* MODEL PICKER (provider-aware) */}
+            {availableModels.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <Cpu
+                    className="w-3.5 h-3.5 text-cyan-400/80"
+                    strokeWidth={2}
+                  />
+                  <h3 className="text-[11px] font-semibold text-white/80 tracking-[0.1em] uppercase">
+                    Model — {providerInfo?.shortName}
+                  </h3>
+                </div>
 
-              <div className="space-y-1.5">
-                {MISTRAL_MODELS.map((m) => {
-                  const selected = draft.model === m.id
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() =>
-                        setDraft({ ...draft, model: m.id as MistralModelId })
-                      }
-                      className={`group w-full text-left p-3 rounded-2xl transition-all duration-150 ${
-                        selected
-                          ? "bg-white/[0.05]"
-                          : "bg-white/[0.02] hover:bg-white/[0.035]"
-                      }`}
-                      style={{
-                        boxShadow: selected
-                          ? "inset 0 0 0 1px rgba(6,182,212,0.45), 0 0 0 3px rgba(6,182,212,0.08)"
-                          : "inset 0 0 0 1px rgba(255,255,255,0.06)",
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[14px] font-medium text-white truncate">
+                <div className="space-y-1.5">
+                  {availableModels.map((m) => {
+                    const selected = draft.model === m.id
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setDraft({ ...draft, model: m.id })}
+                        className={`group w-full text-left p-3 rounded-2xl transition-all duration-150 ${
+                          selected
+                            ? "bg-white/[0.05]"
+                            : "bg-white/[0.02] hover:bg-white/[0.035]"
+                        }`}
+                        style={{
+                          boxShadow: selected
+                            ? "inset 0 0 0 1px rgba(6,182,212,0.45), 0 0 0 3px rgba(6,182,212,0.08)"
+                            : "inset 0 0 0 1px rgba(255,255,255,0.06)",
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[14px] font-medium text-white truncate block">
                               {m.name}
                             </span>
-                            {m.badge && (
-                              <span
-                                className="text-[9px] font-semibold tracking-[0.06em] px-1.5 py-0.5 rounded-md text-cyan-300/90"
-                                style={{
-                                  background:
-                                    "linear-gradient(135deg, rgba(6,182,212,0.15) 0%, rgba(16,185,129,0.1) 100%)",
-                                  boxShadow:
-                                    "inset 0 0 0 1px rgba(6,182,212,0.25)",
-                                }}
-                              >
-                                {m.badge.toUpperCase()}
-                              </span>
+                            {m.description && (
+                              <p className="text-[12px] text-white/45 mt-0.5 leading-snug">
+                                {m.description}
+                              </p>
                             )}
                           </div>
-                          <p className="text-[12px] text-white/45 mt-0.5 leading-snug">
-                            {m.description}
-                          </p>
+                          <div
+                            className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                              selected
+                                ? "bg-cyan-400 text-black"
+                                : "bg-white/5 text-transparent"
+                            }`}
+                          >
+                            <Check className="w-3 h-3" strokeWidth={3} />
+                          </div>
                         </div>
-                        <div
-                          className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                            selected
-                              ? "bg-cyan-400 text-black"
-                              : "bg-white/5 text-transparent"
-                          }`}
-                        >
-                          <Check className="w-3 h-3" strokeWidth={3} />
-                        </div>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </section>
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* TEMPERATURE */}
             <section>
@@ -389,6 +431,8 @@ export function ToolsSheet({
                   <Check className="w-4 h-4" strokeWidth={2.5} />
                   Uložené
                 </>
+              ) : providerInfo ? (
+                `Uložiť a pokračovať s ${providerInfo.shortName}`
               ) : (
                 "Uložiť a pokračovať"
               )}

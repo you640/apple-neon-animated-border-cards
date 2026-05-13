@@ -21,9 +21,10 @@ import {
   saveSettings,
   clearSettings,
   DEFAULT_SETTINGS,
-  MISTRAL_MODELS,
-  type MistralSettings,
-} from "@/lib/mistral-settings"
+  detectProvider,
+  PROVIDERS,
+  type AISettings,
+} from "@/lib/ai-settings"
 
 const SUGGESTIONS = [
   { title: "Napíš mi krátku báseň", subtitle: "o tichu a oceáne" },
@@ -41,7 +42,7 @@ function getMessageText(msg: UIMessage): string {
 }
 
 export function ChatWindow() {
-  const [settings, setSettings] = useState<MistralSettings>(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useState<AISettings>(DEFAULT_SETTINGS)
   const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [toolsOpen, setToolsOpen] = useState(false)
   const [inputValue, setInputValue] = useState("")
@@ -71,7 +72,7 @@ export function ChatWindow() {
           temperature: settings.temperature,
         },
         headers: {
-          "x-mistral-api-key": settings.apiKey,
+          "x-api-key": settings.apiKey,
         },
       }),
     }),
@@ -111,7 +112,7 @@ export function ChatWindow() {
     }
   }
 
-  const handleSaveSettings = (next: MistralSettings) => {
+  const handleSaveSettings = (next: AISettings) => {
     saveSettings(next)
     setSettings(next)
   }
@@ -129,8 +130,12 @@ export function ChatWindow() {
   const hasInput = inputValue.trim().length > 0
   const isEmpty = messages.length === 0
   const hasKey = settings.apiKey.length > 0
+  const provider = detectProvider(settings.apiKey)
+  const providerInfo = provider === "unknown" ? null : PROVIDERS[provider]
   const currentModel =
-    MISTRAL_MODELS.find((m) => m.id === settings.model)?.name ?? "Mistral"
+    providerInfo?.models.find((m) => m.id === settings.model)?.name ??
+    providerInfo?.shortName ??
+    "AI"
 
   return (
     <div className="relative w-full h-dvh max-w-[640px] mx-auto flex flex-col bg-black overflow-hidden">
@@ -193,8 +198,21 @@ export function ChatWindow() {
                   PRO
                 </span>
               </div>
-              <span className="text-[10.5px] text-white/40 leading-none mt-0.5 truncate">
-                {hasKey ? currentModel : "Pripojte Mistral AI"}
+              <span className="flex items-center gap-1.5 text-[10.5px] text-white/40 leading-none mt-0.5 truncate">
+                {hasKey && providerInfo ? (
+                  <>
+                    <span
+                      aria-hidden
+                      className="inline-block w-1.5 h-1.5 rounded-full"
+                      style={{ background: providerInfo.accent }}
+                    />
+                    <span className="truncate">
+                      {providerInfo.shortName} · {currentModel}
+                    </span>
+                  </>
+                ) : (
+                  "Pripojte AI providera"
+                )}
               </span>
             </div>
           </button>
@@ -256,12 +274,12 @@ export function ChatWindow() {
 
               {/* Headline */}
               <h2 className="text-[26px] sm:text-[32px] font-semibold text-white leading-[1.1] tracking-[-0.02em] text-balance">
-                {hasKey ? "Rád ťa vidím." : "Pripojme Mistral AI."}
+                {hasKey ? "Rád ťa vidím." : "Pripojme AI."}
               </h2>
               <p className="mt-3 sm:mt-3.5 text-[14px] sm:text-[15px] leading-relaxed text-white/50 max-w-[320px] text-pretty">
                 {hasKey
                   ? "Váš priestor pre kreativitu a inteligenciu."
-                  : "Zadajte svoj Mistral API kľúč v Nástrojoch a začnime."}
+                  : "Vložte ľubovoľný API kľúč — OpenAI, Anthropic, Mistral, Groq, Google alebo xAI. Zvyšok zariadime."}
               </p>
 
               {/* CTA when no key */}
@@ -367,8 +385,8 @@ export function ChatWindow() {
                 onKeyDown={handleKeyDown}
                 placeholder={
                   hasKey
-                    ? "Opýtaj sa čokoľvek…"
-                    : "Najprv zadajte API kľúč v Nástrojoch…"
+                    ? `Opýtaj sa čokoľvek${providerInfo ? ` (${providerInfo.shortName})` : ""}…`
+                    : "Najprv vložte ľubovoľný API kľúč v Nástrojoch…"
                 }
                 rows={1}
                 disabled={!settingsLoaded}
@@ -450,8 +468,10 @@ export function ChatWindow() {
           {/* Disclaimer */}
           <p className="text-center text-[11px] text-white/30 mt-2.5 tracking-tight">
             Poháňané{" "}
-            <span className="text-white/45 font-medium">Mistral AI</span> ·
-            ChatCipiky PRO môže robiť chyby.
+            <span className="text-white/45 font-medium">
+              {providerInfo ? providerInfo.name : "AI"}
+            </span>{" "}
+            · ChatCipiky PRO môže robiť chyby.
           </p>
         </div>
       </div>
